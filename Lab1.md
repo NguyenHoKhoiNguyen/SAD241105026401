@@ -134,6 +134,72 @@ Dưới đây là các cơ chế cần giải quyết trong hệ thống Payroll
 7.  Cơ chế quản lý phương thức thanh toán.
 8.  Cơ chế tự động hóa quy trình thanh toán.
 
+# Phân tích ca sử dụng Payment
+
+## Các lớp phân tích cho ca sử dụng Payment:
+
+### 1. **Lớp `Employee`**
+   - **Nhiệm vụ**: Lớp này đại diện cho nhân viên nhận lương trong hệ thống. Nhân viên có thể yêu cầu thanh toán và cung cấp thông tin cần thiết cho việc thanh toán.
+   - **Thuộc tính**:
+     - `employeeID`: Mã nhân viên.
+     - `name`: Tên nhân viên.
+     - `paymentMethod`: Phương thức thanh toán của nhân viên (chuyển khoản, nhận trực tiếp tại văn phòng, gửi qua bưu điện).
+     - `payAmount`: Số tiền mà nhân viên nhận được.
+   - **Mối quan hệ**:
+     - **Employee** có mối quan hệ **1-N** với **Payment** (một nhân viên có thể có nhiều thanh toán trong các kỳ lương khác nhau).
+
+### 2. **Lớp `PayrollSystem`**
+   - **Nhiệm vụ**: Lớp này quản lý toàn bộ quá trình thanh toán cho nhân viên, bao gồm tính toán lương và chuyển tiền cho nhân viên.
+   - **Thuộc tính**:
+     - `payrollDate`: Ngày thanh toán của hệ thống.
+     - `paymentRecords`: Danh sách các bản thanh toán cho nhân viên trong kỳ lương.
+   - **Phương thức**:
+     - `calculatePayment()`: Tính toán số tiền lương dựa trên loại nhân viên (theo giờ, theo lương cơ bản, hoặc cộng hoa hồng).
+     - `processPayment()`: Xử lý thanh toán cho nhân viên (chuyển khoản, gửi qua bưu điện hoặc thanh toán trực tiếp).
+   - **Mối quan hệ**:
+     - **PayrollSystem** có mối quan hệ **1-N** với **Payment** (một hệ thống có thể tạo ra nhiều thanh toán cho nhiều nhân viên).
+     - **PayrollSystem** có mối quan hệ **1-N** với **Employee** (một hệ thống có thể quản lý thanh toán cho nhiều nhân viên).
+
+### 3. **Lớp `Payment`**
+   - **Nhiệm vụ**: Lớp này đại diện cho một khoản thanh toán đối với nhân viên. Nó lưu trữ thông tin chi tiết về số tiền thanh toán và phương thức thanh toán.
+   - **Thuộc tính**:
+     - `paymentID`: Mã thanh toán.
+     - `amount`: Số tiền thanh toán cho nhân viên.
+     - `paymentMethod`: Phương thức thanh toán (chuyển khoản, nhận trực tiếp tại văn phòng, gửi qua bưu điện).
+     - `paymentDate`: Ngày thanh toán được thực hiện.
+   - **Mối quan hệ**:
+     - **Payment** có mối quan hệ **N-1** với **Employee** (một thanh toán thuộc về một nhân viên).
+     - **Payment** có mối quan hệ **N-1** với **PayrollSystem** (một thanh toán thuộc về một hệ thống thanh toán).
+
+### 4. **Lớp `BankSystem`** (Chỉ áp dụng cho phương thức thanh toán chuyển khoản)
+   - **Nhiệm vụ**: Lớp này xử lý các giao dịch ngân hàng liên quan đến việc chuyển khoản cho nhân viên.
+   - **Thuộc tính**:
+     - `bankID`: Mã ngân hàng.
+     - `transactionID`: Mã giao dịch ngân hàng.
+     - `amountTransferred`: Số tiền đã chuyển.
+     - `accountNumber`: Số tài khoản của nhân viên.
+   - **Mối quan hệ**:
+     - **BankSystem** có mối quan hệ **1-N** với **Payment** (một ngân hàng có thể thực hiện nhiều giao dịch thanh toán).
+
+---
+
+## Mối quan hệ giữa các lớp phân tích:
+- **Employee ↔ Payment**: Mối quan hệ **1-N** giữa nhân viên và thanh toán (một nhân viên có thể có nhiều thanh toán).
+- **PayrollSystem ↔ Employee**: Mối quan hệ **1-N** giữa hệ thống thanh toán và nhân viên (một hệ thống có thể quản lý thanh toán cho nhiều nhân viên).
+- **PayrollSystem ↔ Payment**: Mối quan hệ **1-N** giữa hệ thống thanh toán và các khoản thanh toán (một hệ thống có thể quản lý nhiều khoản thanh toán).
+- **Payment ↔ BankSystem**: Mối quan hệ **N-1** giữa thanh toán và hệ thống ngân hàng (một thanh toán có thể liên kết với một ngân hàng).
+
+## Mô tả hành vi thông qua biểu đồ sequence:
+Hành vi của hệ thống trong ca sử dụng **Payment** có thể được mô tả qua các bước sau:
+
+1. **Bước 1**: `Employee` yêu cầu thanh toán qua phương thức thanh toán của mình.
+2. **Bước 2**: `PayrollSystem` nhận yêu cầu và tính toán số tiền thanh toán dựa trên dữ liệu từ `Employee` (số giờ làm việc, lương cơ bản, hoa hồng, v.v.).
+3. **Bước 3**: `PayrollSystem` tạo ra đối tượng `Payment` và xác định phương thức thanh toán.
+4. **Bước 4**: Nếu phương thức thanh toán là **chuyển khoản**, `BankSystem` xử lý giao dịch thanh toán và xác nhận giao dịch thành công.
+5. **Bước 5**: `PayrollSystem` hoàn thành giao dịch và gửi thông báo cho `Employee` về khoản thanh toán.
+![Biểu đồ](https://www.planttext.com/api/plantuml/png/b9CxJiD048PxdsBa9e2K25eB8HwXG0A4I2wmMKziYtquk-j85gAce86QYfAA0xYW81Vn2RW2tlWHcv18D5xDpEz_lXsFlxFFOss8CWbdJWyMptds948GGRXu9q2_tYYmF7kD7Sg8rd3EOoPJHBXt002hw6BemSYeI0GsAmZ7TXoJbACmLsX2wVygd72P2EF1K2OJXZQfS9QWDZVbIpkx7inbv3iFJaLG59HaR9HgWxp4YClKa9YYhtsskjuYbShN7bn6sXnMhaTMG0cZ2IlKhLOhZ5X9Ybflmx251i06tJ6GjQjj6uGjT2z0fPX6YcyaE2NYhZs5IH5t2OmYGXDg8Yd-GXlRyXILGhzDIIYrrUk4Jr1rACkHZ5UkRQWUdDbbuNds4i4i8GB2F7k48CgpZyuYDIla7hZGxuExFnZikSr0FN0R1RKkP8x0YKXhXNQTxWvizEdAh5brXV_uDJ1hXeK92R0ogsMbsvAWzYcErhSgRPQ2IDT0w8C9bKo2i2Lr7USOXMz_p1y0003__mC0)
+---
+
 # Phân tích ca sử dụng Maintain Timecard
 
 ## 1. Các lớp phân tích cho ca sử dụng Maintain Timecard
@@ -217,3 +283,100 @@ Trong ca sử dụng **Maintain Timecard**, hệ thống cần cho phép nhân v
 - **Employee** và **Timecard** có mối quan hệ **1-N**, vì mỗi nhân viên có thể có nhiều timecard.
 - **PayrollSystem** có mối quan hệ **1-N** với **Timecard**, vì hệ thống này quản lý nhiều timecard của nhiều nhân viên.
 - **TimecardManager** có mối quan hệ **1-N** với **Employee** và **Timecard**, vì mỗi quản lý có thể phê duyệt nhiều timecard của nhân viên.
+![Biểu đồ](https://www.planttext.com/api/plantuml/png/X5AnIiH04EttAuOqfy8Lja7amBCGF11Fi1wJ8LdSxEPsDu4WrXOsMbjPMla1AIoy7yaN-0icRf9BzDHcuRrzpBmtCn_bsynOr3PB16CJM3zKvRsCGKRn-WKXU7yEG5JbKye2WSR0SP8ALH313GC0Qj79t8UbrLn63IineI6sFA40TMXyEEN67boq-93TihPiHxco8TgwmBn-6nIhJ9jBfQyfz85B-tlZEeZDJC_qrS-mq4g8PM4i9Qv5wgZvg5DBdbEWjhcj5JaAthZho9rT7wwK4eJI6L1wyzVbzljujJfNFFoPUu4I8zBEM-B0E5kjvf6ai5j0Pw_3N_OmJRNA_t4myAjfbP6nHqfh2YnNyc_F4rXKvIE7LOOIuggyWuXNvUleJFe3yVOzc4x1s_Css_KXHiF6wzYkSpCmxFk01kg-qqRDPYJ3vf8_0G00__y30000)
+
+
+## Giải thích:
+
+### 1. **Lớp `Employee`**:
+- `employeeID`: Mã nhân viên.
+- `name`: Tên nhân viên.
+- `timecards`: Danh sách các timecard mà nhân viên đã tạo (mối quan hệ 1-N với lớp `Timecard`).
+
+### 2. **Lớp `Timecard`**:
+- `date`: Ngày làm việc của nhân viên.
+- `hoursWorked`: Số giờ làm việc trong ngày.
+- `employeeID`: Mã nhân viên (mối quan hệ với lớp `Employee`).
+- `status`: Trạng thái của timecard (chưa phê duyệt, đã phê duyệt, cần sửa chữa).
+
+### 3. **Lớp `PayrollSystem`**:
+- `payrollDate`: Ngày thanh toán của kỳ lương.
+- `payrollRecords`: Danh sách các timecard đã được phê duyệt.
+- Phương thức `validateTimecard()`: Kiểm tra tính hợp lệ của timecard.
+- Phương thức `storeTimecard()`: Lưu trữ timecard vào hệ thống.
+
+### 4. **Lớp `TimecardManager`**:
+- `managerID`: Mã của quản lý.
+- `assignedEmployees`: Danh sách nhân viên mà quản lý phụ trách.
+- Phương thức `approveTimecard()`: Phê duyệt timecard.
+- Phương thức `requestCorrection()`: Yêu cầu sửa chữa timecard.
+
+## Quan hệ giữa các lớp:
+- **Employee** có mối quan hệ **1-N** với **Timecard** (một nhân viên có thể có nhiều timecard).
+- **PayrollSystem** có mối quan hệ **1-N** với **Timecard** (một hệ thống lương có thể quản lý nhiều timecard).
+- **TimecardManager** có mối quan hệ **1-N** với **Employee** (một quản lý có thể quản lý nhiều nhân viên và timecard).
+
+# Hợp nhất kết quả phân tích ca sử dụng "Payment" và "Maintain Timecard"
+
+## 1. Hợp nhất kết quả phân tích của ca sử dụng "Payment" và "Maintain Timecard"
+
+### Ca sử dụng "Payment":
+- Các lớp chính liên quan bao gồm **Employee**, **PayrollSystem**, **Payment**, và **BankSystem**.
+- Hành vi liên quan đến việc tính toán và xử lý thanh toán cho nhân viên dựa trên các yếu tố như số tiền lương, phương thức thanh toán, và việc chuyển khoản qua ngân hàng.
+
+### Ca sử dụng "Maintain Timecard":
+- Các lớp chính bao gồm **Employee**, **Timecard**, **PayrollSystem**.
+- Hành vi liên quan đến việc nhân viên nhập thông tin giờ làm vào hệ thống qua timecard, và hệ thống Payroll thực hiện tính toán dựa trên các giờ làm đó.
+
+## 2. Hợp nhất các lớp phân tích
+
+Kết hợp các lớp từ hai ca sử dụng trên thành một hệ thống hoàn chỉnh có thể bao gồm các lớp sau:
+- **Employee**: Nhân viên, người yêu cầu thanh toán và cập nhật timecard.
+- **Timecard**: Lưu trữ thông tin về giờ làm của nhân viên.
+- **PayrollSystem**: Quản lý toàn bộ quy trình tính toán và xử lý thanh toán.
+- **Payment**: Lưu trữ thông tin về các khoản thanh toán đã thực hiện.
+- **BankSystem**: Hệ thống ngân hàng để thực hiện thanh toán qua chuyển khoản.
+
+## 3. Biểu đồ lớp hợp nhất
+
+![Biểu đồ](https://www.planttext.com/api/plantuml/png/b9IxRjH058PxFyMHcm1I8cWjX4Ao54Y048b4VNPyuXbbBivS8gqGDGKDr5JGKI0Um0N5vaNy1Bm2dlKbuqrs9Hglpfn__ltEnVxR_3bs7gqFIcO7SFEbRJvh3hhYDpyHsFex0zastsge-Vg71h_-nNZ693e7BrGjpOe8FcG0G4FqSb70cRT2L_5Kew8qhd6bIFlNvBafjnBFbGdQ5x0mOIaf7bgw2kJys_xIWuS5N1jHnaoeI_HqBXGnjEMK-PWDR6EcP_D3D6VZ9bZttjXBAjC_ZSPTt3rZn3ZQYju4jIIRNdPXgOJV3T0nMoFbsSfvKZr5tHyjPlv3GzuHCxPq1RmIpZyT2dws0K39WkpKIHTkOMjh63btJuU6p5x2U6TYYy6yGNXd8Fl65nFpsfZH5yAgRRY9u0JrPTgWPHVF2Rn5xP1vOVHzQESnVK7MpYU8ZCNitQ6DFRbrJQ4Eu3IkksgRhmAk0chWRVC9Aj4slzDN8PiMFt-Im-4Xv8-FZXxbKqCBo2S5YovuJQ1GhqQ5otTPJ6kxxT6lM-yoYZgR-PRjn9dBej_GYMsiVNufsrpNcM15xh_efkhskusotcrJp-ZJ_IGBrDji1CADvL49dbiJAfv8yomx9bt6xzq_0000__y30000)
+
+# Giải thích biểu đồ lớp hợp nhất
+
+## 1. **Employee**:
+- Lưu trữ thông tin về nhân viên, bao gồm ID, tên, phương thức thanh toán và số tiền thanh toán.
+- Các phương thức:
+  - `requestPayment()`: Yêu cầu thanh toán.
+  - `updateTimecard()`: Cập nhật thông tin giờ làm.
+- Quan hệ:
+  - Mỗi nhân viên có thể có nhiều **Payments**.
+  - Mỗi nhân viên có thể cập nhật nhiều **Timecards**.
+
+## 2. **Timecard**:
+- Lưu trữ thông tin về các giờ làm của nhân viên trong một ngày làm việc, bao gồm thời gian làm việc, ngày làm, và mã số công việc (charge number).
+- Phương thức:
+  - `submitTimecard()`: Nhân viên nộp thông tin giờ làm vào hệ thống.
+- Quan hệ:
+  - Mỗi nhân viên có thể nộp nhiều **Timecards**.
+  - **PayrollSystem** quản lý và xử lý nhiều **Timecards**.
+
+## 3. **PayrollSystem**:
+- Quản lý toàn bộ quy trình thanh toán, tính toán tiền lương từ các **Timecards** và xử lý thanh toán qua **Payments**.
+- Phương thức:
+  - `calculatePayment()`: Tính toán tiền lương từ giờ làm.
+  - `processPayment()`: Xử lý các khoản thanh toán.
+- Quan hệ:
+  - **PayrollSystem** xử lý nhiều **Payments** và nhiều **Timecards**.
+  - **PayrollSystem** quản lý nhiều **Employees**.
+
+## 4. **Payment**:
+- Lưu trữ thông tin về thanh toán, bao gồm ID thanh toán, số tiền, phương thức thanh toán, và ngày thanh toán.
+- Phương thức:
+  - `confirmPayment()`: Xác nhận thanh toán đã hoàn thành.
+- Quan hệ:
+  - Mỗi **Payment** được xử lý qua **BankSystem**.
+
+## 5. **BankSystem**:
+- Hệ thống ngân hàng thực hiện chuyển khoản cho nhân viên thông qua **Payment**.
+- Phương thức:
+  - `processTransaction()`: Thực hiện giao dịch chuyển tiền qua ngân hàng.
